@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Short Form King · Revenue Generated</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0a0a0f; --surface: #111118; --border: #1e1e2e;
+    --green: #00e5a0; --blue: #4d9fff; --amber: #ffb84d; --red: #ff5f5f;
+    --text: #f0f0f8; --muted: #6b6b8a;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Syne',sans-serif; min-height:100vh; padding:24px; }
+
+  .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
+  .header h1 { font-size:13px; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); }
+  .header-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+  .presets { display:flex; gap:6px; flex-wrap:wrap; }
+  .preset-btn { background:var(--surface); border:1px solid var(--border); color:var(--muted); padding:5px 12px; border-radius:999px; font-family:'DM Mono',monospace; font-size:10px; cursor:pointer; transition:all .15s; letter-spacing:.03em; }
+  .preset-btn:hover, .preset-btn.active { border-color:var(--green); color:var(--green); background:rgba(0,229,160,.06); }
+
+  .date-row { display:flex; align-items:center; gap:8px; }
+  .date-sep { font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); }
+  .date-input { background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:5px 10px; outline:none; transition:border-color .2s; color-scheme:dark; width:130px; }
+  .date-input:focus { border-color:var(--green); }
+
+  .refresh-btn { background:var(--surface); border:1px solid var(--border); color:var(--muted); padding:6px 14px; border-radius:6px; font-family:'DM Mono',monospace; font-size:11px; cursor:pointer; transition:all .2s; letter-spacing:.05em; white-space:nowrap; }
+  .refresh-btn:hover { border-color:var(--green); color:var(--green); }
+  .refresh-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+  .divider { height:1px; background:var(--border); margin-bottom:16px; }
+
+  .loading { display:flex; align-items:center; gap:12px; padding:40px 0; font-family:'DM Mono',monospace; font-size:12px; color:var(--muted); }
+  .spinner { width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .error { background:rgba(255,95,95,.08); border:1px solid rgba(255,95,95,.2); border-radius:10px; padding:16px 20px; font-family:'DM Mono',monospace; font-size:12px; color:var(--red); }
+  .empty-state { text-align:center; padding:40px 0; font-family:'DM Mono',monospace; font-size:12px; color:var(--muted); }
+
+  .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:12px; }
+  .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; position:relative; overflow:hidden; opacity:0; transform:translateY(8px); animation:fadeUp .4s ease forwards; }
+  .stat-card:nth-child(1){animation-delay:.05s} .stat-card:nth-child(2){animation-delay:.1s} .stat-card:nth-child(3){animation-delay:.15s}
+  @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+  .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+  .stat-card.green::before{background:var(--green)} .stat-card.blue::before{background:var(--blue)} .stat-card.amber::before{background:var(--amber)}
+  .stat-label { font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .stat-value { font-family:'DM Mono',monospace; font-size:28px; font-weight:500; line-height:1; margin-bottom:6px; }
+  .stat-card.green .stat-value{color:var(--green)} .stat-card.blue .stat-value{color:var(--blue)} .stat-card.amber .stat-value{color:var(--amber)}
+  .stat-sub { font-size:11px; color:var(--muted); font-family:'DM Mono',monospace; }
+
+  .progress-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:12px; }
+  .progress-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .progress-title { font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+  .progress-pct { font-family:'DM Mono',monospace; font-size:12px; color:var(--green); }
+  .progress-track { background:var(--border); border-radius:999px; height:6px; overflow:hidden; margin-bottom:8px; }
+  .progress-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,var(--green),#00ffbb); width:0; transition:width 1.2s cubic-bezier(.4,0,.2,1); }
+  .progress-labels { display:flex; justify-content:space-between; font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); }
+
+  .table-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:12px; }
+  .table-header-row { display:grid; grid-template-columns:1fr 100px 100px 100px 90px; padding:12px 16px; border-bottom:1px solid var(--border); background:#0d0d15; }
+  .th { font-size:9px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+  .table-row { display:grid; grid-template-columns:1fr 100px 100px 100px 90px; padding:11px 16px; border-bottom:1px solid #14141f; align-items:center; transition:background .15s; }
+  .table-row:last-child{border-bottom:none} .table-row:hover{background:#13131c}
+  .td { font-size:12px; font-family:'DM Mono',monospace; }
+  .td.name { font-family:'Syne',sans-serif; font-size:13px; font-weight:600; }
+  .td.green{color:var(--green)} .td.red{color:var(--red)} .td.muted{color:var(--muted)}
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:9px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
+  .badge.pif  { background:rgba(0,229,160,.12); color:var(--green); border:1px solid rgba(0,229,160,.2); }
+  .badge.plan { background:rgba(77,159,255,.12); color:var(--blue);  border:1px solid rgba(77,159,255,.2); }
+
+  .insight-card { background:linear-gradient(135deg,#0f0f1a,#111120); border:1px solid #252540; border-radius:12px; padding:16px 20px; display:flex; gap:14px; align-items:flex-start; margin-bottom:12px; }
+  .insight-icon { font-size:18px; color:var(--muted); margin-top:2px; flex-shrink:0; }
+  .insight-text { font-family:'DM Mono',monospace; font-size:12px; color:var(--muted); line-height:1.6; }
+  .insight-text strong { color:var(--text); }
+  .last-updated { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); text-align:right; padding-top:4px; }
+
+  /* Widget (compact pages) */
+  .widget-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .widget { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:24px; width:100%; max-width:440px; position:relative; overflow:hidden; }
+  .widget::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+  .widget.green::before{background:var(--green)} .widget.blue::before{background:var(--blue)} .widget.amber::before{background:var(--amber)}
+  .widget-label { font-size:10px; font-weight:600; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .wdot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .wdot.green{background:var(--green);box-shadow:0 0 7px rgba(0,229,160,.7)}
+  .wdot.blue{background:var(--blue);box-shadow:0 0 7px rgba(77,159,255,.7)}
+  .wdot.amber{background:var(--amber);box-shadow:0 0 7px rgba(255,184,77,.7)}
+  .widget-pills { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .widget-dates { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+  .dlbl { font-family:'DM Mono',monospace; font-size:8px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+  .bignum { font-family:'DM Mono',monospace; font-size:52px; font-weight:500; line-height:1; margin-bottom:14px; }
+  .bignum.green{color:var(--green)} .bignum.blue{color:var(--blue)} .bignum.amber{color:var(--amber)}
+  .widget-sub { display:flex; align-items:center; justify-content:space-between; }
+  .widget-sub-txt { font-family:'DM Mono',monospace; font-size:12px; color:var(--muted); }
+  .widget-sub-txt strong { color:var(--text); }
+
+
+</style>
+</head>
+<body>
+<div class="widget-wrap">
+<div class="widget blue">
+  <div class="widget-label"><span class="wdot blue"></span>REVENUE GENERATED</div>
+  <div class="widget-pills">
+    <button class="preset-btn active" onclick="setPreset('all',this)">All Time</button>
+    <button class="preset-btn" onclick="setPreset('today',this)">Today</button>
+    <button class="preset-btn" onclick="setPreset('week',this)">This Week</button>
+    <button class="preset-btn" onclick="setPreset('month',this)">This Month</button>
+    <button class="preset-btn" onclick="setPreset('quarter',this)">This Quarter</button>
+  </div>
+  <div class="widget-dates">
+    <div><div class="dlbl">From</div><input type="date" class="date-input" id="dateFrom" onchange="onDateChange()"></div>
+    <div><div class="dlbl">To</div><input type="date" class="date-input" id="dateTo" onchange="onDateChange()"></div>
+  </div>
+  <div class="bignum blue" id="bignum"><div class="spinner" style="width:22px;height:22px;border-top-color:var(--blue)"></div></div>
+  <div class="widget-sub">
+    <div class="widget-sub-txt" id="subtxt">Loading...</div>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadData()">↺</button>
+  </div>
+</div>
+</div>
+<script>
+
+const API_KEY     = 'pit-7236385b-92df-4e5b-b225-ea07b3a32e38';
+const LOCATION_ID = 'Ssg47DJXtq6t7p6JBLG8';
+const CF_CASH     = 'x93SmIL1W0ByLmIuHaVS';
+const CF_REVENUE  = 'X5tJUfY296WF3qGyCXjZ';
+const CF_OWING    = 'hiGTkF1nvNOOLnVZzoa0';
+const TAGS        = ['14k pif', '21k pif', 'payment plan'];
+
+const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+
+function parseAmt(val) {
+  if (!val) return 0;
+  const n = parseFloat(String(val).replace(/[^0-9.]/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+
+function getCF(contact, fieldId) {
+  const f = (contact.customFields || []).find(f => f.id === fieldId);
+  return f ? (f.value || '') : '';
+}
+
+function getStatus(tags) {
+  const tl = (tags || []).map(t => t.toLowerCase());
+  if (tl.includes('14k pif') || tl.includes('21k pif')) return 'PIF';
+  if (tl.includes('payment plan')) return 'PLAN';
+  return null;
+}
+
+function toDateStr(d) { return d.toISOString().split('T')[0]; }
+
+function nowTime() {
+  const n = new Date();
+  let h = n.getHours() % 12 || 12;
+  const m = String(n.getMinutes()).padStart(2, '0');
+  return h + ':' + m + ' ' + (n.getHours() >= 12 ? 'pm' : 'am');
+}
+
+async function fetchTaggedContacts(tag) {
+  let all = [], page = 1;
+  while (true) {
+    let url = `https://services.leadconnectorhq.com/contacts/?locationId=${LOCATION_ID}&query=${encodeURIComponent(tag)}&limit=100`;
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${API_KEY}`, 'Version': '2021-07-28' }
+    });
+    if (!res.ok) throw new Error(`GHL API ${res.status}: ${res.statusText}`);
+    const data = await res.json();
+    const contacts = (data.contacts || []).filter(c => {
+      const tl = (c.tags || []).map(t => t.toLowerCase());
+      return tl.includes(tag.toLowerCase());
+    });
+    all = all.concat(contacts);
+    if (!data.meta?.nextPage) break;
+    page++;
+    if (page > 10) break;
+  }
+  return all;
+}
+
+async function fetchAllTaggedContacts() {
+  const results = await Promise.all(TAGS.map(fetchTaggedContacts));
+  // dedupe by id
+  const seen = new Set();
+  const all = [];
+  for (const batch of results) {
+    for (const c of batch) {
+      if (!seen.has(c.id)) { seen.add(c.id); all.push(c); }
+    }
+  }
+  return all;
+}
+
+function applyDateFilter(contacts, fromVal, toVal) {
+  if (!fromVal && !toVal) return contacts;
+  const fromDate = fromVal ? new Date(fromVal + 'T00:00:00') : null;
+  const toDate   = toVal   ? new Date(toVal   + 'T23:59:59') : null;
+  return contacts.filter(c => {
+    const d = new Date(c.dateUpdated || c.dateAdded);
+    if (fromDate && d < fromDate) return false;
+    if (toDate   && d > toDate)   return false;
+    return true;
+  });
+}
+
+function setPreset(preset, el) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const now = new Date();
+  let from = '', to = '';
+  if (preset === 'today') {
+    from = to = toDateStr(now);
+  } else if (preset === 'week') {
+    const d = new Date(now); d.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1));
+    from = toDateStr(d); to = toDateStr(now);
+  } else if (preset === 'month') {
+    from = toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)); to = toDateStr(now);
+  } else if (preset === 'quarter') {
+    const q = Math.floor(now.getMonth() / 3);
+    from = toDateStr(new Date(now.getFullYear(), q * 3, 1)); to = toDateStr(now);
+  }
+  const df = document.getElementById('dateFrom');
+  const dt = document.getElementById('dateTo');
+  if (df) df.value = from;
+  if (dt) dt.value = to;
+  loadData();
+}
+
+function onDateChange() {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  loadData();
+}
+
+async function loadData() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  document.getElementById('bignum').innerHTML = '<div class="spinner" style="width:22px;height:22px;border-top-color:var(--blue)"></div>';
+  document.getElementById('subtxt').textContent = 'Loading...';
+  const fromVal = document.getElementById('dateFrom').value;
+  const toVal   = document.getElementById('dateTo').value;
+  const rangeLabel = fromVal && toVal ? fromVal+' → '+toVal : fromVal ? 'From '+fromVal : toVal ? 'To '+toVal : 'All time';
+  try {
+    let contacts = await fetchAllTaggedContacts();
+    contacts = applyDateFilter(contacts, fromVal, toVal);
+    const total = contacts.reduce((s,c) => s + parseAmt(getCF(c, CF_REVENUE)), 0);
+    document.getElementById('bignum').textContent = fmt(total);
+    document.getElementById('subtxt').innerHTML = `<strong>${contacts.length} deals</strong> · ${rangeLabel}`;
+  } catch(e) {
+    document.getElementById('bignum').textContent = '—';
+    document.getElementById('subtxt').textContent = 'Error: ' + e.message;
+  }
+  btn.disabled = false;
+}
+loadData();
+</script>
+</body></html>
